@@ -341,6 +341,28 @@ def login_if_needed(page):
         log("❌ 没找到登录按钮")
         return False
 
+    # 登录按钮可能因安全验证处于禁用状态：
+    # 先等它可用（给验证自动完成留约 20 秒），
+    # 一直不可用则直接返回，不让 click 抛超时异常。
+    submit_enabled = False
+
+    for _ in range(8):
+        try:
+            if submit.is_enabled():
+                submit_enabled = True
+                break
+        except Exception:
+            pass
+
+        page.wait_for_timeout(2500)
+
+    if not submit_enabled:
+        log(
+            "⚠️ 登录按钮仍被禁用"
+            "（需手动完成安全验证）"
+        )
+        return False
+
     submit.click()
 
     page.wait_for_timeout(3000)
